@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: pipeline-generico
+spec:
+  params:
+    - default: git-auth
+      name: GIT_SECRET
+      type: string
+    - name: GIT_HOST
+      description: The git repository host
+      type: string
+      default: gogs-demo-git.apps.ocp4-16.farg.com
+    - default: http
+      name: GIT_PROTOCOL
+      type: string      
+    - name: APP_SOURCE_GIT
+      description: The application git repository      
+      type: string
+      default: gogs/s2i-sample
+    - name: APP_SOURCE_BRANCH
+      type: string         
+      default: master      
+    - default: s2i-sample
+      description: The pipelines project runs
+      name: PROJECT_OC_NAME
+      type: string
+    - name: GIT_HASH_COMMIT
+      type: string
+      description: The application image tag to build
+      default: '1.0.0'
+  tasks:
+    - name: source-clone
+      params:
+        - name: GIT_HOST
+          value: $(params.GIT_HOST)
+        - name: GIT_PROTOCOL
+          value: $(params.GIT_PROTOCOL)
+        - name: GIT_PATH
+          value: "$(params.APP_SOURCE_GIT)"
+        - name: GIT_SOURCE_BRANCH
+          value: "$(params.APP_SOURCE_BRANCH)"
+        - name: git-secret-name
+          value: $(params.GIT_SECRET)
+      taskRef:
+        kind: Task
+        name: git-clonev2
+      workspaces:
+        - name: workspace
+          workspace: workspace
+    - name: build-image
+      params:
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE
+          value: >-
+             image-registry.openshift-image-registry.svc:5000/app-pipeline-example/$(params.PROJECT_OC_NAME):$(params.GIT_HASH_COMMIT)
+      runAfter:
+        - source-clone
+      taskRef:
+        kind: Task
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: workspace
+  workspaces:
+    - name: workspace
