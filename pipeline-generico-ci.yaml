@@ -7,28 +7,31 @@ spec:
     - default: git-auth
       name: GIT_SECRET
       type: string
-    - name: GIT_HOST
+    - default: gogs-demo-git.apps.ocp4-16.farg.com
       description: The git repository host
+      name: GIT_HOST
       type: string
-      default: gogs-demo-git.apps.ocp4-16.farg.com
     - default: http
       name: GIT_PROTOCOL
-      type: string      
-    - name: APP_SOURCE_GIT
-      description: The application git repository      
       type: string
-      default: gogs/s2i-sample
-    - name: APP_SOURCE_BRANCH
-      type: string         
-      default: master      
+    - default: gogs/s2i-sample
+      description: The application git repository
+      name: APP_SOURCE_GIT
+      type: string
+    - default: master
+      name: APP_SOURCE_BRANCH
+      type: string
     - default: s2i-sample
+      name: APP_NAME
+      type: string
+    - default: app-pipeline-example
       description: The pipelines project runs
       name: PROJECT_OC_NAME
       type: string
-    - name: GIT_HASH_COMMIT
-      type: string
+    - default: 1.0.0
       description: The application image tag to build
-      default: '1.0.0'
+      name: TAG
+      type: string
   tasks:
     - name: source-clone
       params:
@@ -37,9 +40,9 @@ spec:
         - name: GIT_PROTOCOL
           value: $(params.GIT_PROTOCOL)
         - name: GIT_PATH
-          value: "$(params.APP_SOURCE_GIT)"
+          value: $(params.APP_SOURCE_GIT)
         - name: GIT_SOURCE_BRANCH
-          value: "$(params.APP_SOURCE_BRANCH)"
+          value: $(params.APP_SOURCE_BRANCH)
         - name: git-secret-name
           value: $(params.GIT_SECRET)
       taskRef:
@@ -53,8 +56,7 @@ spec:
         - name: TLSVERIFY
           value: 'false'
         - name: IMAGE
-          value: >-
-             image-registry.openshift-image-registry.svc:5000/app-pipeline-example/$(params.PROJECT_OC_NAME):$(params.GIT_HASH_COMMIT)
+          value: 'image-registry.openshift-image-registry.svc:5000/$(params.PROJECT_OC_NAME)/$(params.APP_NAME):$(params.TAG)'
       runAfter:
         - source-clone
       taskRef:
